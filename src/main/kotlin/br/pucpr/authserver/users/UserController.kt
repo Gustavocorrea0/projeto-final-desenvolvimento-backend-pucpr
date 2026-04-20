@@ -1,0 +1,64 @@
+package br.pucpr.authserver.users
+
+import br.pucpr.authserver.users.requests.CreateUserRequests
+import br.pucpr.authserver.users.responses.UserResponse
+import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
+import kotlin.collections.map
+
+@RestController
+@RequestMapping("/users")
+class UserController(val service: UserService) {
+    @PostMapping
+    fun insert(
+        @RequestBody
+        @Valid
+        user: CreateUserRequests
+    ) = service.insert(user.toUser())
+        ?.let { ResponseEntity.ok(it) }
+        ?.let { ResponseEntity.status(HttpStatus.CREATED).body(it) }
+        ?: ResponseEntity.badRequest().build()
+
+    @GetMapping
+    fun list(
+        @RequestParam sortDir: String? = null,
+        @RequestParam role: String? = null
+    ) = if (role != null) {
+            service.findByRole(role)
+                .map { UserResponse(it) }
+                .let { ResponseEntity.ok(it) }
+
+        } else {
+            SortDir.findOrNull(sortDir ?: "ASC")
+                ?.let { service.findAll(it) }
+                ?.let { ResponseEntity.ok(it) }
+                ?: ResponseEntity.badRequest().build()
+        }
+
+    @GetMapping("/{id}")
+    fun getById(
+        @PathVariable id: Long
+    ) = service.findByIdOrNull(id)
+            ?.let { UserResponse(it) }
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
+
+    @DeleteMapping("/{id}")
+    fun delete( @PathVariable id: Long ): ResponseEntity<Void> =
+
+        service.delete(id)?.let {
+            if (it) ResponseEntity.ok().build()
+            else ResponseEntity.notFound().build()
+        } ?: ResponseEntity.badRequest().build()
+
+    @PutMapping("/{id}/roles/{role}")
+    fun grant(
+        @PathVariable id: Long,
+        @PathVariable role: String
+    ): ResponseEntity<Void> =
+        service.addRole(id, role)
+            ?.let { if (it) ResponseEntity.ok().build() else ResponseEntity.noContent().build() }
+            ?: ResponseEntity.badRequest().build()
+}
