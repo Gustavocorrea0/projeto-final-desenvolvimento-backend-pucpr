@@ -11,47 +11,40 @@ import kotlin.collections.map
 @RestController
 @RequestMapping("/users")
 class UserController(val service: UserService) {
+
     @PostMapping
     fun insert(
         @RequestBody
         @Valid
         user: CreateUserRequests
     ) = service.insert(user.toUser())
-        ?.let { ResponseEntity.ok(it) }
-        ?.let { ResponseEntity.status(HttpStatus.CREATED).body(it) }
-        ?: ResponseEntity.badRequest().build()
+        .let { ResponseEntity.ok(it) }
+        .let { ResponseEntity.status(HttpStatus.CREATED).body(it) }
 
     @GetMapping
     fun list(
         @RequestParam sortDir: String? = null,
         @RequestParam role: String? = null
-    ) = if (role != null) {
-            service.findByRole(role)
-                .map { UserResponse(it) }
-                .let { ResponseEntity.ok(it) }
+    ) :  ResponseEntity<List<UserResponse>>  {
 
-        } else {
-            SortDir.findOrNull(sortDir ?: "ASC")
-                ?.let { service.findAll(it) }
-                ?.let { ResponseEntity.ok(it) }
-                ?: ResponseEntity.badRequest().build()
-        }
+        val users = if (role != null) service.findByRole(role)
+                    else service.findAll(SortDir.find(sortDir ?: "ASC"))
 
+        return users.map { UserResponse(it) }
+                    .let { ResponseEntity.ok(it) }
+
+    }
+
+    // 41:10 - Aula 2
     @GetMapping("/{id}")
     fun getById(
         @PathVariable id: Long
-    ) = service.findByIdOrNull(id)
-            ?.let { UserResponse(it) }
-            ?.let { ResponseEntity.ok(it) }
-            ?: ResponseEntity.notFound().build()
+    ) = service.findById(id)
+        .let { UserResponse(it) }
+        .let { ResponseEntity.ok(it) }
 
     @DeleteMapping("/{id}")
-    fun delete( @PathVariable id: Long ): ResponseEntity<Void> =
-
-        service.delete(id)?.let {
-            if (it) ResponseEntity.ok().build()
-            else ResponseEntity.notFound().build()
-        } ?: ResponseEntity.badRequest().build()
+    fun delete( @PathVariable id: Long ) = service.delete(id)
 
     @PutMapping("/{id}/roles/{role}")
     fun grant(
@@ -59,6 +52,5 @@ class UserController(val service: UserService) {
         @PathVariable role: String
     ): ResponseEntity<Void> =
         service.addRole(id, role)
-            ?.let { if (it) ResponseEntity.ok().build() else ResponseEntity.noContent().build() }
-            ?: ResponseEntity.badRequest().build()
+            .let { if (it) ResponseEntity.ok().build() else ResponseEntity.noContent().build() }
 }

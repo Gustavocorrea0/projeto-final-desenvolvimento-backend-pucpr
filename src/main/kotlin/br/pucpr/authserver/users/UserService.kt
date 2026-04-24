@@ -1,6 +1,9 @@
 package br.pucpr.authserver.users
 
+import br.pucpr.authserver.exceptions.BadRequestException
+import br.pucpr.authserver.exceptions.NotFoundException
 import br.pucpr.authserver.roles.RoleRepository
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -10,11 +13,15 @@ class UserService(
     val repository: UserRepository,
     val roleRepository: RoleRepository
 ) {
-    fun insert(user: User): User? {
+    fun insert(user: User): User {
         if (repository.findByEmail(user.email) != null) {
-            return null
+            throw BadRequestException("User already exists.")
         }
-        return repository.save(user)
+
+        val saved =  repository.save(user)
+        log.info("Adding User: {}", saved.id)
+        return saved
+
     }
 
     fun findAll(dir: SortDir = SortDir.ASC) = when (dir) {
@@ -24,28 +31,36 @@ class UserService(
 
     fun findByIdOrNull(id: Long) = repository.findByIdOrNull(id)
 
-    fun delete(id: Long): Boolean? {
-        val user = findByIdOrNull(id) ?: return false
+    fun findById(id: Long) = findByIdOrNull(id) ?: throw NotFoundException(id.toString())
 
+    fun delete(id: Long) {
+        val user = findById(id)
         if (user.isAdmin() && repository.findByRole("ADMIN").size == 1) {
-            return null
+            throw BadRequestException("Cannot delete user last user Administrator.")
         }
-
+        log.warn("Deleted user: {}", user.id)
         repository.delete(user)
-        return true
     }
 
-    fun findByRole(role: String) = repository.findByRole(role.uppercase())
+    fun findByRole(roleName: String) = repository.findByRole(roleName.uppercase())
 
-    fun addRole(id: Long, roleName: String): Boolean? {
+    // 1:24:00 -> aula 2
+    fun addRole(id: Long, roleName: String): Boolean {
         val upperRole = roleName.uppercase()
-        val user = findByIdOrNull(id) ?: return null
+        val user = findById(id)
         if (user.roles.any { it.name == upperRole }) return false
 
-        val role = roleRepository.findByName(upperRole) ?: return null
+        val role = roleRepository.findByName(upperRole) ?: throw BadRequestException("Role $upperRole does not exist.")
 
         user.roles.add(role)
         repository.save(user)
+        log.info("Added role: {} | User: {}", upperRole, user.id)
         return true
     }
+
+    // criacao de logs
+    companion object {
+        val log = LoggerFactory.getLogger(UserService::class.java)
+    }
+
 }
