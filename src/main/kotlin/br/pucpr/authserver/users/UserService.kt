@@ -2,7 +2,11 @@ package br.pucpr.authserver.users
 
 import br.pucpr.authserver.exceptions.BadRequestException
 import br.pucpr.authserver.exceptions.NotFoundException
+import br.pucpr.authserver.exceptions.UnauthorizedException
 import br.pucpr.authserver.roles.RoleRepository
+import br.pucpr.authserver.security.Jwt
+import br.pucpr.authserver.users.responses.LoginResponse
+import br.pucpr.authserver.users.responses.UserResponse
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
@@ -11,7 +15,8 @@ import org.springframework.stereotype.Service
 @Service
 class UserService(
     val repository: UserRepository,
-    val roleRepository: RoleRepository
+    val roleRepository: RoleRepository,
+    val jwt: Jwt
 ) {
     fun insert(user: User): User {
         if (repository.findByEmail(user.email) != null) {
@@ -65,6 +70,20 @@ class UserService(
         repository.save(user)
         log.info("Added role: {} | User: {}", upperRole, user.id)
         return true
+    }
+
+    // JWT
+    fun login(email: String, password: String): LoginResponse {
+        val user = repository.findByEmail(email) ?: throw UnauthorizedException("User Not Found")
+        if (user.password != password) {
+            throw UnauthorizedException("Wrong Passwords")
+        }
+
+        log.info("User: {} logged in", user.id)
+        return LoginResponse(
+            token = jwt.crateToken(user),
+            user = UserResponse(user)
+        )
     }
 
     // criacao de logs

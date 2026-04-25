@@ -1,18 +1,29 @@
 package br.pucpr.authserver.users
 
+import br.pucpr.authserver.exceptions.ForbiddenException
+import br.pucpr.authserver.security.UserToken
 import br.pucpr.authserver.users.requests.CreateUserRequests
+import br.pucpr.authserver.users.requests.LoginRequest
 import br.pucpr.authserver.users.requests.UpdateUserRequest
 import br.pucpr.authserver.users.responses.UserResponse
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import jakarta.validation.Valid
 import org.hibernate.annotations.Fetch
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import kotlin.collections.map
 
 @RestController
 @RequestMapping("/users")
 class UserController(val service: UserService) {
+
+    @PostMapping("/login")
+    fun login(
+        @RequestBody @Valid user: LoginRequest
+    ) = service.login(user.email!!, user.password!!)
 
     @PostMapping
     fun insert(
@@ -44,18 +55,34 @@ class UserController(val service: UserService) {
         .let { UserResponse(it) }
         .let { ResponseEntity.ok(it) }
 
+    @SecurityRequirement(name = "jwt-auth")
+    @PreAuthorize("hasRole('ADMIN')") // testa o token
     @DeleteMapping("/{id}")
-    fun delete( @PathVariable id: Long ) = service.delete(id)
+    fun delete(
+        @PathVariable id: Long
+    )
+    = service.delete(id)
 
+    @SecurityRequirement(name = "jwt-auth")
+    @PreAuthorize("permitAll()")
     @PatchMapping("/{id}")
     fun updateUser(
         @PathVariable id: Long,
-        @RequestBody @Valid user: UpdateUserRequest
-    ) = service.update(id, user.name!!)
-        ?.let { UserResponse(it) }
-        ?.let { ResponseEntity.ok(user) }
-        ?: ResponseEntity.noContent().build()
+        @RequestBody @Valid user: UpdateUserRequest,
+        auth: Authentication
+    ): ResponseEntity<UserResponse> {
+        val token = auth.principal as? UserToken ?: throw ForbiddenException()
+        if (token.id != id && !token.isAdmin) {
+            throw ForbiddenException("Update is not allowed")
+        }
 
+        return service.update(id, user.name!!)
+            ?.let { UserResponse(it) }
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.noContent().build()
+    }
+    @SecurityRequirement(name = "jwt-auth")
+    @PreAuthorize("hasRole('ADMIN')") // testa o token
     @PutMapping("/{id}/roles/{role}")
     fun grant(
         @PathVariable id: Long,
