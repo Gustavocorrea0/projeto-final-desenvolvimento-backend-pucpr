@@ -1,8 +1,10 @@
 package br.pucpr.authserver.users
 
 import br.pucpr.authserver.users.requests.CreateUserRequests
+import br.pucpr.authserver.users.requests.UpdateUserRequest
 import br.pucpr.authserver.users.responses.UserResponse
 import jakarta.validation.Valid
+import org.hibernate.annotations.Fetch
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -35,7 +37,6 @@ class UserController(val service: UserService) {
 
     }
 
-    // 41:10 - Aula 2
     @GetMapping("/{id}")
     fun getById(
         @PathVariable id: Long
@@ -45,6 +46,15 @@ class UserController(val service: UserService) {
 
     @DeleteMapping("/{id}")
     fun delete( @PathVariable id: Long ) = service.delete(id)
+
+    @PatchMapping("/{id}")
+    fun updateUser(
+        @PathVariable id: Long,
+        @RequestBody @Valid user: UpdateUserRequest
+    ) = service.update(id, user.name!!)
+        ?.let { UserResponse(it) }
+        ?.let { ResponseEntity.ok(user) }
+        ?: ResponseEntity.noContent().build()
 
     @PutMapping("/{id}/roles/{role}")
     fun grant(

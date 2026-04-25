@@ -33,6 +33,16 @@ class UserService(
 
     fun findById(id: Long) = findByIdOrNull(id) ?: throw NotFoundException(id.toString())
 
+    fun update(id: Long, name: String): User? {
+        val user = findById(id)
+        if (user.name == name) {
+            return null
+        }
+        user.name = name
+        repository.save(user)
+        return user
+    }
+
     fun delete(id: Long) {
         val user = findById(id)
         if (user.isAdmin() && repository.findByRole("ADMIN").size == 1) {
@@ -44,7 +54,6 @@ class UserService(
 
     fun findByRole(roleName: String) = repository.findByRole(roleName.uppercase())
 
-    // 1:24:00 -> aula 2
     fun addRole(id: Long, roleName: String): Boolean {
         val upperRole = roleName.uppercase()
         val user = findById(id)
