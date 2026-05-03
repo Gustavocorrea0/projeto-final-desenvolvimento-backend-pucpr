@@ -46,7 +46,7 @@ class ClientController(
         // Extrai o UserToken do principal do token JWT.
         // Se por algum motivo o principal não for UserToken, lança ForbiddenException (HTTP 403).
         val token = auth.principal as? UserToken
-            ?: throw ForbiddenException("Token inválido.")
+            ?: throw ForbiddenException("Invalid Token")
 
         // Converte o DTO em entidade, passando o ID do usuário autenticado.
         // A data de criação e o status ativo são preenchidos dentro de toClient().
@@ -105,7 +105,7 @@ class ClientController(
         auth: Authentication
     ): ResponseEntity<ClientResponse> {
         val token = auth.principal as? UserToken
-            ?: throw ForbiddenException("Token inválido.")
+            ?: throw ForbiddenException("Invalid Token")
 
         // Chama o Service passando: id do cliente, novos valores e id do editor.
         // Se retornar null, nenhum campo mudou → HTTP 204 No Content (sem body).

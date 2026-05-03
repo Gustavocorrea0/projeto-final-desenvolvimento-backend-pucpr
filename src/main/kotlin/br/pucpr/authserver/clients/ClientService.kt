@@ -26,7 +26,7 @@ class ClientService(
     // Retorna o Client salvo (com idClient preenchido pelo banco).
     fun insert(client: Client): Client {
         val saved = repository.save(client)
-        log.info("Cliente criado: id={}", saved.idClient)
+        log.info("Client created: id={}", saved.idClient)
         return saved
     }
 
@@ -55,7 +55,7 @@ class ClientService(
     // Lança NotFoundException (HTTP 404) se o cliente não existir.
     // Centraliza a lógica de "não encontrado" em um único lugar.
     fun findById(id: Long): Client =
-        findByIdOrNull(id) ?: throw NotFoundException("Cliente não encontrado: $id")
+        findByIdOrNull(id) ?: throw NotFoundException("Client Not Found")
 
     // ─────────────────────────────────────────────────────────────
     // UPDATE — Alterar nameClient e contactClient
@@ -87,7 +87,7 @@ class ClientService(
         client.userUpdateClient = updaterId
 
         repository.save(client)
-        log.info("Cliente atualizado: id={} | por usuário={}", client.idClient, updaterId)
+        log.info("Updated client: id={} | by user = {}", client.idClient, updaterId)
         return client
     }
 
@@ -98,8 +98,19 @@ class ClientService(
     // Loga um aviso (warn) pois deleção é uma operação destrutiva.
     fun delete(id: Long) {
         val client = findById(id)
-        log.warn("Cliente removido: id={}", client.idClient)
+        log.warn("Remove Client: id={}", client.idClient)
         repository.delete(client)
+    }
+
+    fun validClientById(idClient: Long): Boolean {
+        val client = repository.findByIdOrNull(idClient)
+
+        if (client != null) {
+            return true
+        } else {
+            return false
+        }
+
     }
 
     // companion object: equivalente a membros estáticos em Java.

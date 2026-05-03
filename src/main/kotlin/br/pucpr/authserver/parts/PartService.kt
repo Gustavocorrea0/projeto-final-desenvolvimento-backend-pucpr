@@ -4,6 +4,7 @@ import br.pucpr.authserver.clients.ClientService
 import br.pucpr.authserver.exceptions.NotFoundException
 import org.springframework.stereotype.Service
 import org.slf4j.LoggerFactory
+import org.springframework.data.jpa.domain.AbstractPersistable_.id
 import org.springframework.data.repository.findByIdOrNull
 import java.math.BigDecimal
 import java.time.ZoneId
@@ -70,4 +71,20 @@ class PartService(
         log.warn("Part with id = {} is removed", part.idPart)
         partRepository.delete(part)
     }
+
+    fun validPartById(idPart: Long?): Boolean {
+        val part = partRepository.findByIdOrNull(idPart!!)
+        if (part != null) {  return true }
+        else { return false }
+    }
+
+    fun findValuePartById(idPart: Long): BigDecimal? {
+        val part = partRepository.findByIdOrNull(idPart)
+        if (part != null) {
+            return part.valuePart
+        } else {
+            return BigDecimal(-0.1)
+        }
+    }
+
 }

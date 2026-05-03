@@ -47,3 +47,14 @@ data class PartResponse (
         userUpdatePart = part.userUpdatePart
     )
 }
+
+// Return value
+data class PartResponseSale (
+    var idPart: Long? = null,
+    var valuePart: BigDecimal? = null,
+) {
+    constructor(part: Part): this(
+        idPart = part.idPart,
+        valuePart = part.valuePart
+    )
+}

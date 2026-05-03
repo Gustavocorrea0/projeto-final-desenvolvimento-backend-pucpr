@@ -27,13 +27,13 @@ data class CreateClientRequest(
     // @Size: valida o tamanho da string após trimming.
     //   min = 1  → pelo menos 1 caractere real.
     //   max = 50 → no máximo 50 caracteres (espelhando o @Column(length = 50) na entidade).
-    @field:NotBlank(message = "O nome do cliente é obrigatório.")
-    @field:Size(min = 1, max = 50, message = "O nome deve ter entre 1 e 50 caracteres.")
+    @field:NotBlank(message = "The Client name is required.")
+    @field:Size(min = 1, max = 50, message = "The Name Must Be Between 1 and 50 Characters Long")
     val nameClient: String?,
 
     // Telefone é obrigatório, mas não validamos o formato aqui.
     // Poderíamos adicionar @Pattern(regexp = "...") futuramente se necessário.
-    @field:NotBlank(message = "O contato do cliente é obrigatório.")
+    @field:NotBlank(message = "Client contact is required")
     val contactClient: String?
 ) {
     // Converte o DTO para a entidade Client, preenchendo os campos automáticos.

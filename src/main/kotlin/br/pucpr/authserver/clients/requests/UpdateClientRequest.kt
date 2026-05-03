@@ -16,10 +16,10 @@ import jakarta.validation.constraints.Size
 data class UpdateClientRequest(
     // @NotBlank garante que não aceita null nem string vazia.
     // @Size mantém a mesma regra de negócio da criação.
-    @field:NotBlank(message = "O nome do cliente é obrigatório.")
-    @field:Size(min = 1, max = 50, message = "O nome deve ter entre 1 e 50 caracteres.")
+    @field:NotBlank(message = "The Client Name is Required")
+    @field:Size(min = 1, max = 50, message = "The Name Must Be Between 1 and 50 Characters Long")
     val nameClient: String?,
 
-    @field:NotBlank(message = "O contato do cliente é obrigatório.")
+    @field:NotBlank(message = "Client contact is required")
     val contactClient: String?
 )
