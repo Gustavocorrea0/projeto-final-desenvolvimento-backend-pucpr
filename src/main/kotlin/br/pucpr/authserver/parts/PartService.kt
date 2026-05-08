@@ -1,6 +1,7 @@
 package br.pucpr.authserver.parts
 
 import br.pucpr.authserver.clients.ClientService
+import br.pucpr.authserver.exceptions.InsufficientStockException
 import br.pucpr.authserver.exceptions.NotFoundException
 import org.springframework.stereotype.Service
 import org.slf4j.LoggerFactory
@@ -80,11 +81,39 @@ class PartService(
 
     fun findValuePartById(idPart: Long): BigDecimal? {
         val part = partRepository.findByIdOrNull(idPart)
-        if (part != null) {
-            return part.valuePart
+        return if (part != null) {
+            part.valuePart
         } else {
-            return BigDecimal(-0.1)
+            BigDecimal(-0.1)
         }
     }
+
+    fun removeQuantityPartById(idPart: Long, qtnSale: Long): Boolean? {
+        val part = partRepository.findByIdOrNull(idPart)
+        if (part == null) {
+            return false
+        } else {
+            if (part.quantityPart!! >= qtnSale) {
+                part.quantityPart = part.quantityPart!! - qtnSale
+                return true
+            }
+            return false
+        }
+    }
+
+    fun addQuantityPartById(idPart: Long, qtnPart: Long): Boolean? {
+        val part = partRepository.findByIdOrNull(idPart)
+        if (part == null) {
+            return false
+        } else if (qtnPart < 0) {
+            throw InsufficientStockException("Quantity part is negative")
+        }
+        else {
+            part.quantityPart = part.quantityPart!! + qtnPart
+            partRepository.save(part)
+            return true
+        }
+    }
+
 
 }

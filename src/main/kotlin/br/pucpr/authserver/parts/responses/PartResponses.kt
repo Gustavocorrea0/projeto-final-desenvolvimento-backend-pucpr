@@ -58,3 +58,13 @@ data class PartResponseSale (
         valuePart = part.valuePart
     )
 }
+
+data class PartResponseAddQtnPart (
+    var idPart: Long? = null,
+    var quantityPart: Long? = null,
+) {
+    constructor(part: Part): this(
+        idPart = part.idPart,
+        quantityPart = part.quantityPart
+    )
+}

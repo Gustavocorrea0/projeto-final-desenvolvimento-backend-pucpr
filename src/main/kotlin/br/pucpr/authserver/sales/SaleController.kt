@@ -39,6 +39,7 @@ class SaleController (
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(SaleResponse(saleSaved))
+
     }
 
     @SecurityRequirement(name = "jwt-auth")

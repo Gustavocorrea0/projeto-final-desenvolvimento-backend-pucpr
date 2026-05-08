@@ -1,9 +1,11 @@
 package br.pucpr.authserver.parts
 
 import br.pucpr.authserver.exceptions.ForbiddenException
+import br.pucpr.authserver.parts.requests.AddPartsToExisting
 import br.pucpr.authserver.parts.requests.CreatePartRequest
 import br.pucpr.authserver.parts.requests.UpdatePartRequest
 import br.pucpr.authserver.parts.responses.PartResponse
+import br.pucpr.authserver.parts.responses.PartResponseAddQtnPart
 import br.pucpr.authserver.parts.responses.PartSummaryResponse
 import br.pucpr.authserver.security.UserToken
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -83,6 +85,24 @@ class PartController (
 
     @SecurityRequirement(name = "jwt-auth")
     @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/add/{id}")
+    fun addPartToExistingPart(
+        @PathVariable id: Long,
+        @RequestBody @Valid requestPart: AddPartsToExisting,
+        auth: Authentication
+    ) : ResponseEntity<PartResponseAddQtnPart> {
+        val token = auth.principal as? UserToken ?: throw ForbiddenException("Token is Invalid")
+        return service.addQuantityPartById(
+            idPart = id,
+            qtnPart = requestPart.quantityPart!!
+        )   ?.let { PartResponseAddQtnPart(idPart = id, quantityPart = requestPart.quantityPart) }
+            ?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.noContent().build()
+    }
+
+
+    @SecurityRequirement(name = "jwt-auth")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     fun deletePartById(
         @PathVariable id: Long
@@ -90,5 +110,7 @@ class PartController (
         service.deleteById(id)
         return ResponseEntity.ok().build()
     }
+
+
 
 }
