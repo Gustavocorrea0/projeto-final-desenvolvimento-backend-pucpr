@@ -24,29 +24,39 @@ class SaleService (
     }
 
     fun insert(sale: Sale): Sale {
-            val partValueById: BigDecimal =
-                partService.findValuePartById(sale.idPartSale!!) ?: throw NotFoundException("Part Value Not Found")
 
-            val finalValue = partValueById.multiply(BigDecimal(sale.qtnPartSale!!))
+        var finalValue = BigDecimal.ZERO
 
-            if (!partService.validPartById(sale.idPartSale!!)) {
-                log.info("Part with id = {} Not Found", sale.idPartSale!!)
+        sale.salesParts.forEach { part ->
+
+            val partValue: BigDecimal =
+                partService.findValuePartById(part.idPartSale!!)
+                    ?: throw NotFoundException("Part Value Not Found")
+
+            if (!partService.validPartById(part.idPartSale!!)) {
+                log.info("Part with id = {} Not Found", part.idPartSale!!)
                 throw NotFoundException("Part Not Found")
             }
+
+            val removePart: Boolean? = partService.removeQuantityPartById(
+                part.idPartSale!!,
+                part.qtnPartSale!!
+            )
+
+            if (!removePart!!) {
+                log.info("Fail remove Part with id = {} Not Found", part.idPartSale!!)
+                throw InsufficientStockException("The part with ID = ${part.idPartSale!!} does not have the requested quantity in stock.")
+            }
+
+            partValue.multiply(BigDecimal(part.qtnPartSale!!))
+
+            // finalizar regra de calculo
+            finalValue += partValue.multiply(BigDecimal(part.qtnPartSale!!))
+        }
 
             if (!clientService.validClientById(sale.idClientSale!!)) {
                 log.info("Client with id = {} Not Found", sale.idClientSale!!)
                 throw NotFoundException("Client Not Found")
-            }
-
-            val removePart: Boolean? = partService.removeQuantityPartById(
-                sale.idPartSale!!,
-                sale.qtnPartSale!!
-            )
-
-            if (!removePart!!) {
-                log.info("Fail remove Part with id = {} Not Found", sale.idPartSale!!)
-                throw InsufficientStockException("The quantity of parts requested is not in stock")
             }
 
             sale.finalValueSale = finalValue

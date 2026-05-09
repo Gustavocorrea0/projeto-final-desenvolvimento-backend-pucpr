@@ -24,8 +24,7 @@ data class SaleResponse (
     var idSale: Long? = null,
     var idUserSale: Long? = 0,
     var idClientSale: Long? = 0,
-    var idPartSale: Long? = 0,
-    var qtnPartSale: Long? = 0,
+    var salesParts: List<SalePartResponse>,
     var finalValueSale: BigDecimal? = BigDecimal.ZERO,
     var dateTimeSale: ZonedDateTime
 ) {
@@ -33,8 +32,7 @@ data class SaleResponse (
         idSale = sale.idSale,
         idUserSale = sale.idUserSale,
         idClientSale = sale.idClientSale,
-        idPartSale = sale.idPartSale,
-        qtnPartSale = sale.qtnPartSale,
+        salesParts = sale.salesParts.map { SalePartResponse(it) },
         finalValueSale = sale.finalValueSale,
         dateTimeSale = sale.dateTimeSale
     )

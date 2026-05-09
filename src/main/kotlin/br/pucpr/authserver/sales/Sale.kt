@@ -1,9 +1,12 @@
 package br.pucpr.authserver.sales
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.math.BigDecimal
 import java.time.ZonedDateTime
@@ -22,11 +25,13 @@ class Sale (
     @Column(nullable = false)
     var idClientSale: Long? = 0,
 
-    @Column(nullable = false)
-    var idPartSale: Long? = 0,
-
-    @Column(nullable = false)
-    var qtnPartSale: Long? = 0,
+    @OneToMany(
+        mappedBy = "sale",
+        cascade = [(CascadeType.ALL)],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    var salesParts: MutableList<SalePart> = mutableListOf(),
 
     @Column(nullable = false)
     var finalValueSale: BigDecimal? = BigDecimal.ZERO,
