@@ -1,7 +1,10 @@
 package br.pucpr.authserver.clients.requests
 
 import br.pucpr.authserver.clients.Client
+import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -33,8 +36,9 @@ data class CreateClientRequest(
 
     // Telefone é obrigatório, mas não validamos o formato aqui.
     // Poderíamos adicionar @Pattern(regexp = "...") futuramente se necessário.
-    @field:NotBlank(message = "Client contact is required")
-    val contactClient: String?
+    @field:NotEmpty(message = "Client contact is required")
+    @field:Valid
+    val contactClient: List<ContactRequest>?
 ) {
     // Converte o DTO para a entidade Client, preenchendo os campos automáticos.
     //
@@ -43,12 +47,22 @@ data class CreateClientRequest(
     //
     // Zona de São Paulo: "America/Sao_Paulo" equivale a GMT-3 (com ajuste para horário de verão).
     // ZonedDateTime.now(zone) captura o instante atual já com o fuso horário correto.
-    fun toClient(userCreateId: Long): Client = Client(
-        nameClient           = nameClient!!,
-        contactClient        = contactClient!!,
-        dateTimeCreateClient = ZonedDateTime.now(ZoneId.of("America/Sao_Paulo")),
-        userCreateClient     = userCreateId,  // quem criou — nunca muda
-        userUpdateClient     = userCreateId,  // na criação, criador = último editor
-        activeClient         = true           // sempre ativo ao ser criado
-    )
+    fun toClient(userCreateId: Long): Client {
+
+        val name  = nameClient!!
+        val now = ZonedDateTime.now(ZoneId.of("America/Sao_Paulo"))
+
+        val newClient = Client(
+            nameClient           = name,
+            dateTimeCreateClient = now,
+            userCreateClient     = userCreateId,  // quem criou — nunca muda
+            userUpdateClient     = userCreateId,  // na criação, criador = último editor
+            activeClient         = true           // sempre ativo ao ser criado
+        )
+
+        val contactEntities = contactClient!!.map { it.toContact(newClient) }
+        newClient.contactsClient.addAll(contactEntities)
+        return newClient
+
+    }
 }

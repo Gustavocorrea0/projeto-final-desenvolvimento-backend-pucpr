@@ -21,10 +21,13 @@ class Client(
     @Column(nullable = false, length = 50)
     var nameClient: String,
 
-    // Telefone do cliente guardado como String para preservar formatação
-    // (ex: "(41) 99999-9999"). nullable = false garante que sempre seja informado.
-    @Column(nullable = false)
-    var contactClient: String,
+    @OneToMany(
+        mappedBy = "client",
+        cascade = [(CascadeType.ALL)],
+        orphanRemoval = true,
+        fetch = FetchType.EAGER
+    )
+    var contactsClient: MutableList<ClientContact> = mutableListOf(),
 
     // Data e hora de criação com timezone.
     // ZonedDateTime armazena também o fuso horário (ex: America/Sao_Paulo, GMT-3).

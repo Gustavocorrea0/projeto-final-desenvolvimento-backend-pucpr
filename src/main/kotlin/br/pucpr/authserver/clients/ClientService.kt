@@ -1,5 +1,6 @@
 package br.pucpr.authserver.clients
 
+import br.pucpr.authserver.clients.requests.ContactRequest
 import br.pucpr.authserver.exceptions.NotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.data.repository.findByIdOrNull
@@ -71,20 +72,30 @@ class ClientService(
     //   null               → se nome E contato são iguais aos atuais (nada mudou).
     //
     // O Controller usa o retorno null para responder HTTP 204 No Content.
-    fun update(id: Long, name: String, contact: String, updaterId: Long): Client? {
+    fun update(
+        id: Long,
+        name: String,
+        contacts: List<ContactRequest>,
+        updaterId: Long
+    ): Client? {
         val client = findById(id)
 
-        // Verifica se há alguma mudança real antes de persistir.
-        // Evita writes desnecessários no banco e retorna 204 ao invés de 200.
-        if (client.nameClient == name && client.contactClient == contact) {
-            return null
-        }
+        val equalsContacts = client.contactsClient.size == contacts.size &&
+                client.contactsClient.zip(contacts).all { (currentContactClient, newContactClient) ->
+                            currentContactClient.typeContact  == newContactClient.typeContact  &&
+                            currentContactClient.valueContact == newContactClient.valueContact &&
+                            currentContactClient.labelContact == newContactClient.labelContact
+                }
+
+        if (client.nameClient == name && equalsContacts) return null
 
         client.nameClient     = name
-        client.contactClient  = contact
-        // Atualiza quem fez a última alteração.
-        // userCreateClient NÃO é tocado aqui (updatable = false também garante isso no JPA).
         client.userUpdateClient = updaterId
+
+        // limpeza dos campos de contato
+        client.contactsClient.clear()
+        val newContacts = contacts.map { it.toContact(client) }
+        client.contactsClient.addAll(newContacts)
 
         repository.save(client)
         log.info("Updated client: id={} | by user = {}", client.idClient, updaterId)

@@ -33,7 +33,7 @@ data class ClientSummaryResponse(
 data class ClientResponse(
     val idClient: Long,
     val nameClient: String,
-    val contactClient: String,
+    val contactClient: List<ContactResponse>,
     val dateTimeCreateClient: ZonedDateTime,
     val userCreateClient: Long,
     val userUpdateClient: Long,
@@ -43,7 +43,7 @@ data class ClientResponse(
     constructor(client: Client) : this(
         idClient             = client.idClient!!,
         nameClient           = client.nameClient,
-        contactClient        = client.contactClient,
+        contactClient        = client.contactsClient.map { ContactResponse(it) },
         dateTimeCreateClient = client.dateTimeCreateClient,
         userCreateClient     = client.userCreateClient,
         userUpdateClient     = client.userUpdateClient,

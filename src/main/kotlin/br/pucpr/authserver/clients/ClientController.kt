@@ -113,7 +113,7 @@ class ClientController(
         return service.update(
             id        = id,
             name      = request.nameClient!!,
-            contact   = request.contactClient!!,
+            contacts   = request.contactClient!!,
             updaterId = token.id
         )
             ?.let { ClientResponse(it) }

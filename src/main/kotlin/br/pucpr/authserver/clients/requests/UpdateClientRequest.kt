@@ -21,5 +21,5 @@ data class UpdateClientRequest(
     val nameClient: String?,
 
     @field:NotBlank(message = "Client contact is required")
-    val contactClient: String?
+    val contactClient: List<ContactRequest>?
 )
