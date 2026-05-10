@@ -40,7 +40,7 @@ Foi utilizada a arquitetura MVC(Model-View-Controller) seguindo o padrao inicial
 
 ## 🎥 Vídeo Explicativo
 
-📼 [Clique Aqui]()
+📼 [Clique Aqui](https://youtu.be/8UjdyZzX_fA)
 
 ---
 
@@ -48,7 +48,7 @@ Foi utilizada a arquitetura MVC(Model-View-Controller) seguindo o padrao inicial
 
 ### 📦 Pré-requisitos
 
-* **JDK 17** ou superior — [Download](https://adoptium.net/)
+* **JDK 17** ou superior — [Download](https://www.oracle.com/br/java/technologies/downloads/)
 * **Gradle** (ou use o wrapper `./gradlew` incluso no projeto)
 * **Git** — [Download](https://git-scm.com/)
 * **IDE**: **IntelliJ IDEA** (recomendada) ou **VS Code** com extensão Kotlin
