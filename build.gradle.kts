@@ -41,6 +41,8 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-jackson:${jjwt}")
 	implementation("io.jsonwebtoken:jjwt-impl:${jjwt}")
 
+	implementation("software.amazon.awssdk:sns:2.25.0")
+
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
