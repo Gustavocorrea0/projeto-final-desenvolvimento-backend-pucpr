@@ -20,6 +20,8 @@ spring:
       include-exception: true
 
 server:
+  address: {$URL_SERVER}
+  port: {$PORT_SERVER}
   servlet:
     context-path: /api
 

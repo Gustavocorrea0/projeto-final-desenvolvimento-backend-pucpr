@@ -41,11 +41,14 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.GET).permitAll()
                     .requestMatchers(HttpMethod.POST, "/users").permitAll()
                     .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/phone-auth").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/phone-auth/confirm").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .anyRequest().authenticated()
             }
             .addFilterBefore(jwtTokenFilter, BasicAuthenticationFilter::class.java)
             .build()
+
     @Bean
     fun corsFilter() = CorsConfiguration().apply {
         addAllowedHeader("*")

@@ -11,27 +11,25 @@ import java.util.UUID
 
 @Entity
 @Table(name = "phone_auth")
-class PhoneAuth (
+class PhoneAuth(
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var idPhoneUser: Long? = null,
 
-    // UUID insert by user
     @Column(nullable = false)
-    var uuidUser: UUID? = null,
+    var uuidUser: UUID,
 
     @Column(nullable = false, updatable = false)
-    var phoneNumber: String? = null,
+    var phoneNumber: String,
 
     @Column(nullable = false)
-    var nameUser: String? = null,
+    var nameUser: String,
 
     @Column(nullable = false, updatable = false)
-    var dateTimeCreate: ZonedDateTime? = null,
+    var dateTimeCreate: ZonedDateTime,
 
     @Column(nullable = false)
-    var dateTimeUpdate: ZonedDateTime? = null
+    var dateTimeUpdate: ZonedDateTime
 
-) {
-}
+)

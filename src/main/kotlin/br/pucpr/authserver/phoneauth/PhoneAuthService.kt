@@ -1,10 +1,11 @@
 package br.pucpr.authserver.phoneauth
 
 import br.pucpr.authserver.codeauth.CodeAuthService
-import br.pucpr.authserver.exceptions.NotFoundException
-import org.aspectj.runtime.reflect.Factory
+import io.github.cdimascio.dotenv.dotenv
 import org.springframework.stereotype.Service
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
@@ -12,6 +13,7 @@ import software.amazon.awssdk.services.sns.SnsClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue
 import software.amazon.awssdk.services.sns.model.PublishRequest
+import java.time.ZonedDateTime
 import kotlin.random.Random
 
 @Service
@@ -24,49 +26,100 @@ class PhoneAuthService (
         private val log = LoggerFactory.getLogger(PhoneAuthService::class.java)
     }
 
-    // funcao que cadastra novo UUID e telefone apos validacao do codigo ENVIADO para TELEFONE COM AWS SNS
-    // funcao que substitui UUID e envio codigo para TELEFONE COM AWS SNS
-
-    /*
-    * 1 - Caso o telefone e uuid existam para um usuário ativo, faça o login e retorne o usuário.
-    *   > criar funcao que valida UUID e TELEFONE
-    *       > caso 1 - existe: Faz Login
-    *       > caso 2 - telefone existe com outro UUID: enviar novo codigo de validacao e alterar ID em caso de sucesso\
-    *       > caso 3 - telefone nao existe: criar um novo cadastro com autenticao (regra 2)
-    */
-
-    /*
-    * 2 - Caso o telefone não exista, ou exista com outro uuid, envie um SMS de confirmação e retorne o código http 202
-    *
-    *   > body confirmacao: telefone, id e codigo
-    *   caso 1 - codigo incorreto: retornar erro 404
-    *   caso 2 - codigo correto cadastra usuario
-    *
-    */
-
-    fun searchPhoneAndUUID(phoneUser: String, uuidUser: UUID): String? {
-        val phoneIsFound: Boolean = phoneAuthRepository.findByPhoneNumber(phoneUser) ?: throw NotFoundException("Phone not found")
-        val uuidIsFound: Boolean = phoneAuthRepository.findByUUIDOrNull(uuidUser) ?: throw NotFoundException("Phone not found")
-        if (phoneIsFound) {
-            return if (uuidIsFound) { "phone and uuid is found" }
-            else { "phone is found" }
-        }
-        return "phone and uuid is not found"
+    sealed class AuthStep1Result {
+        // telefone e uuid existem (autenticado)
+        data class Authenticated(val phoneAuth: PhoneAuth) : AuthStep1Result()
+        // telefone encontrado ou nao encontrado (enviar sms)
+        object CodeSent : AuthStep1Result()
     }
 
-    // 1 - enviar codigo para novo cadastro
-    fun sendNewCodeForNewUser(phoneNumber: String) {
+    fun checkPhoneAndUUID(phoneNumber: String, uuidUser: UUID): AuthStep1Result {
+        val byPhone = phoneAuthRepository.findByPhoneNumber(phoneNumber)
 
-        val code: String = Random.nextInt(100000, 999999).toString()
+        return when {
+            // Caso 1 — Telefone e UUID coincidem: autentica diretamente
+            byPhone != null && byPhone.uuidUser == uuidUser -> {
+                log.info("Caso 1 — Autenticação direta. Telefone: {}", phoneNumber)
+                AuthStep1Result.Authenticated(byPhone)
+            }
+
+            // Caso 2 — Telefone existe com UUID diferente: envia SMS para atualizar UUID
+            byPhone != null && byPhone.uuidUser != uuidUser -> {
+                log.info("Caso 2 — UUID divergente. Enviando novo código. Telefone: {}", phoneNumber)
+                sendSms(phoneNumber)
+                AuthStep1Result.CodeSent
+            }
+
+            // Caso 3 — Telefone não existe: envia SMS para novo cadastro
+            else -> {
+                log.info("Caso 3 — Novo usuário. Enviando código. Telefone: {}", phoneNumber)
+                sendSms(phoneNumber)
+                AuthStep1Result.CodeSent
+            }
+        }
+    }
+
+    // Resultado do passo 2: informa ao controller se foi cadastro novo ou atualização
+    sealed class AuthStep2Result {
+        data class Created(val phoneAuth: PhoneAuth) : AuthStep2Result()   // Caso 3
+        data class Updated(val phoneAuth: PhoneAuth) : AuthStep2Result()   // Caso 2
+    }
+
+    @Transactional
+    fun confirmCode(phoneNumber: String, code: String, uuidUser: UUID, nameUser: String): AuthStep2Result {
+        codeAuthService.validateCodeAuth(phoneNumber, code)
+
+        val existing = phoneAuthRepository.findByPhoneNumber(phoneNumber)
+
+        return if (existing != null) {
+            // Caso 2 — Telefone já cadastrado: atualiza o UUID
+            existing.uuidUser = uuidUser
+            existing.dateTimeUpdate = ZonedDateTime.now()
+            phoneAuthRepository.save(existing)
+                .also { log.info("Caso 2 — UUID atualizado para o telefone: {}", phoneNumber) }
+                .let { AuthStep2Result.Updated(it) }
+        } else {
+            // Caso 3 — Telefone novo: cria o registro
+            val newUser = PhoneAuth(
+                uuidUser = uuidUser,
+                phoneNumber = phoneNumber,
+                nameUser = nameUser,
+                dateTimeCreate = ZonedDateTime.now(),
+                dateTimeUpdate = ZonedDateTime.now()
+            )
+            phoneAuthRepository.save(newUser)
+                .also { log.info("Caso 3 — Novo usuário cadastrado. Telefone: {}", phoneNumber) }
+                .let { AuthStep2Result.Created(it) }
+        }
+    }
+
+    private fun sendSms(phoneNumber: String) {
+
+        val code = Random.nextInt(100000, 999999).toString()
+        val dotenv = dotenv()
+
+        // As credenciais AWS são lidas automaticamente das variáveis de ambiente:
+        // AWS_ACCESS_KEY_ID e AWS_SECRET_ACCESS_KEY (definidas no .env / sistema)
         val sns = SnsClient.builder()
-            .region(Region.US_EAST_1)
+            .region(Region.of(dotenv["AWS_REGION"]))
+            .credentialsProvider (
+                StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(
+                        dotenv["AWS_ACCESS_KEY_ID"],
+                        dotenv["AWS_SECRET_ACCESS_KEY"]
+                    )
+                )
+            )
             .build()
+
+        log.info("Code is: {}", code)
 
         val request = PublishRequest.builder()
             .phoneNumber(phoneNumber)
-            .message("Olá, Bem-Vindo Ao AuthApp, este é seu Codigo de Autencatição: $code")
+            .message("Seu código de autenticação é: $code. Válido por 5 minutos.")
             .messageAttributes(
                 mapOf(
+                    // Garante entrega prioritária (não promocional)
                     "AWS.SNS.SMS.SMSType" to MessageAttributeValue.builder()
                         .dataType("String")
                         .stringValue("Transactional")
@@ -75,24 +128,13 @@ class PhoneAuthService (
             )
             .build()
 
-        val response = sns.publish(request)
-        sns.close()
+        sns.use { client ->
+            val response = client.publish(request)
+            log.info("SMS enviado para: {} | MessageId: {}", phoneNumber, response.messageId())
+        }
 
-        log.info("New code: $response")
-        codeAuthService.saveCodeAuth(phoneUser, code)
-
+        // Persiste o código no banco para validação posterior
+        codeAuthService.saveCodeAuth(phoneNumber, code)
     }
-
-    // 2 - enviar codigo para cadastro existente
-    fun sendNewCodeForExistingUser(phoneNumber: String) : Boolean? { return false }
-
-    // 3 - comparar codigos
-    fun validateAuthCode(code: String) : Boolean? { return false }
-
-    // 4 - salvar novo uuid e salvar novo telefone
-    fun savePhoneAndUUID(code: String) : Boolean? { return false }
-
-    // 5 - atualizar uuid de um telefone
-    fun updatePhoneAndUUID(code: String) : Boolean? { return false }
 
 }

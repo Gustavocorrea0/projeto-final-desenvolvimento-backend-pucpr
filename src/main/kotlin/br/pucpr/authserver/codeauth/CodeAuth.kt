@@ -25,4 +25,8 @@ class CodeAuth(
     @Column(nullable = false)
     var dateTimeExpire: ZonedDateTime? = null,
 
+    // Contador de tentativas incorretas (limite: 5)
+    @Column(nullable = false)
+    var attempts: Int = 0
+
 )

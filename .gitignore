@@ -40,4 +40,4 @@ out/
 
 ### Kotlin ###
 .kotlin
-.env
+src/main/resources/.env

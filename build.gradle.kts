@@ -41,7 +41,9 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-jackson:${jjwt}")
 	implementation("io.jsonwebtoken:jjwt-impl:${jjwt}")
 
+	// novo
 	implementation("software.amazon.awssdk:sns:2.25.0")
+	implementation("io.github.cdimascio:dotenv-kotlin:6.5.0")
 
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
