@@ -3,7 +3,7 @@
 ## 📌 Descrição do Projeto
 
 ### Este projeto trata-se de uma API RESTful desenvolvida em Kotlin com Spring Boot. A principio ele executava apenas tarefas de manipulacao de usuarios e sessões. No contexto atual, ela realiza a gestão de uma loja de venda de peças para carros.
-
+### Alteracao: Foi adicionado ao projeto uma validacao por SMS com servico SNS(Simple Notification Service) da AWS.
 ---
 
 ## 👨‍💻 Informações
@@ -38,9 +38,10 @@
 
 Foi utilizada a arquitetura MVC(Model-View-Controller) seguindo o padrao inicial do projeto.
 
-## 🎥 Vídeo Explicativo
+## 🎥 Vídeo Explicativo e Front-End
 
-📼 [Clique Aqui]()
+📼 [Video Explicativo](https://www.youtube.com/watch?v=EARMnbdJtvE)
+📼 [Front-End](https://github.com/Gustavocorrea0/projeto-final-curso-aws.git)
 
 ---
 
@@ -160,3 +161,11 @@ http://localhost:8080
 | `POST`  | `/sales`      |
 | `GET`   | `/sales`      |
 | `GET`   | `/sales/{id}` |
+
+---
+### Telefone (phone)
+
+| Método | Endpoint              
+|--------|-----------------------|
+| `POST` | `/phone-auth`         |
+| `POST` | `/phone-auth/confirm` |
